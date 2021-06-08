@@ -1,2 +1,2 @@
-from .drot import *
+from .solver import drot
 
