@@ -1,0 +1,7 @@
+.ipynb_checkpoints/
+*.pdf
+*.jpg
+.DS_Store
+.vscode/
+__pycache__/
+.code-workspace
