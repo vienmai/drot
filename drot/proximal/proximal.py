@@ -2,7 +2,7 @@ import numpy as np
 import scipy as sp
 
 
-def primal_dual_linear_prox(x, xnew, y, r, s, step=1.0):
+def primal_dual_linear_prox(x, xnew, y, s, r, step=1.0):
     """
     Compute:
         y_new = argmin_z <b, z> + 1/(2 tau) * ||z - y - tau * A(2* xnew - x)||^2
@@ -13,14 +13,14 @@ def primal_dual_linear_prox(x, xnew, y, r, s, step=1.0):
 
     m, n = x.shape
     assert (m > 0 and n > 0), "Invalid dimensions"
-    assert (m == r.size) and (n == s.size), "Dimensions mismatch"
+    assert (m == s.size) and (n == r.size), "Dimensions mismatch"
 
     e = np.ones(n)
     f = np.ones(m)
     xe, xf = apply_operator(e, f, x)
     xnew_e, xnew_f = apply_operator(e, f, xnew)
-    y1 = step * (2 * xnew_e - xe - r)
-    y2 = step * (2 * xnew_f - xf - s)  
+    y1 = step * (2 * xnew_e - xe - s)
+    y2 = step * (2 * xnew_f - xf - r)  
     return y + np.hstack((y1, y2))
 
 def primal_dual_trace_nonnegative_prox(x, C, y, step=1):
@@ -47,13 +47,13 @@ def trace_nonnegative_prox(x, C, step=1.0):
         x = np.array([[x]])
     return np.maximum(x - step * C, 0.0, out=x, order='F')
 
-def generalized_doubly_stochastic_matrices_projection(A, r, s):
+def generalized_doubly_stochastic_matrices_projection(A, s, r):
     assert A.flags['F_CONTIGUOUS']  # ensure we don't make an expensive copy
     T = np.array(A, order='F') 
     assert T.flags['F_CONTIGUOUS'] # ensure correctness of blas.dger
     m, n = T.shape
     assert (m > 0 and n > 0), "Invalid dimensions"
-    assert (m == r.size) and (n == s.size), "Dimensions mismatch"
+    assert (m == s.size) and (n == r.size), "Dimensions mismatch"
     e = np.ones(n)
     f = np.ones(m)
     Te_s = T.dot(e) - s
@@ -65,11 +65,11 @@ def generalized_doubly_stochastic_matrices_projection(A, r, s):
     apply_adjoint_operator_and_override(e, f, v1, v2, T, -1.0/n, -1.0/m)
     return T    
 
-def generalized_doubly_stochastic_matrices_projection_(A, r, s):
+def generalized_doubly_stochastic_matrices_projection_(A, s, r):
     T = A.copy()
     m, n = T.shape
     assert (m > 0 and n > 0), "Invalid dimensions"
-    assert (m == r.size) and (n == s.size), "Dimensions mismatch"
+    assert (m == s.size) and (n == r.size), "Dimensions mismatch"
     e = np.ones(n)
     f = np.ones(m)
     Te_s = T.dot(e) - s
