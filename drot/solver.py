@@ -58,7 +58,7 @@ def drot(init, proxf, proxg, b, max_iters=10, **kwargs):
         
     start = time()
     while not done:
-        x = proxg(y)
+        x = proxg(y, step)
         z = 2 * x - y
         proxf(z, step)
         x -= z # overide x by x - z 

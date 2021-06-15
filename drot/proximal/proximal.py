@@ -27,8 +27,6 @@ def primal_dual_trace_nonnegative_prox(x, C, y, step=1):
     assert x.flags['F_CONTIGUOUS'] 
     assert C.flags['F_CONTIGUOUS']  
     m, n = x.shape
-    assert (m > 0 and n > 0), "Invalid dimensions"
-    
     T = x - step * C
     e = np.ones(n)
     f = np.ones(m)
@@ -47,7 +45,7 @@ def trace_nonnegative_prox(x, C, step=1.0):
         x = np.array([[x]])
     return np.maximum(x - step * C, 0.0, out=x, order='F')
 
-def generalized_doubly_stochastic_matrices_projection(A, s, r):
+def generalized_doubly_stochastic_matrices_projection(A, s, r, step=None):
     assert A.flags['F_CONTIGUOUS']  # ensure we don't make an expensive copy
     T = np.array(A, order='F') 
     assert T.flags['F_CONTIGUOUS'] # ensure correctness of blas.dger
