@@ -8,11 +8,11 @@ from .restart import adaptive_restart
 
 def drot(init, proxf, proxg, b, max_iters=10, **kwargs):
     # Stopping parameters
-    eps_abs = kwargs.pop("eps_abs", 1e-6)   
-    eps_rel = kwargs.pop("eps_rel", 1e-8)   
+    eps_abs = kwargs.pop("eps_abs", 1e-6)
+    eps_rel = kwargs.pop("eps_rel", 1e-8)
 
     # Stepsize parameters
-    step = kwargs.pop("step", 1.0)  
+    step = kwargs.pop("step", 1.0)
     adapt_stepsize = kwargs.pop("adapt_stepsize", True)
     incr = kwargs.pop("incr", 2.0)
     decr = kwargs.pop("decr", 2.0)
@@ -21,7 +21,7 @@ def drot(init, proxf, proxg, b, max_iters=10, **kwargs):
     min_step = kwargs.pop("min_step", 1e-4)
 
     # Overelaxation parameter
-    lamda = kwargs.pop("relaxation", 1)    
+    lamda = kwargs.pop("relaxation", 1)
 
     # Restart parameters
     fixed_restart = kwargs.pop("fixed_restart", False)
@@ -32,9 +32,8 @@ def drot(init, proxf, proxg, b, max_iters=10, **kwargs):
     verbose = kwargs.pop("verbose", False)
     print_every = kwargs.pop("print_every", 1)
     compute_r_primal = kwargs.pop("compute_r_primal", False)
-    compute_r_dual = kwargs.pop("compute_r_dual", False)   
-    
-    assert (max_step >= min_step), "Maximum stepsize must be larger than minimum one."
+    compute_r_dual = kwargs.pop("compute_r_dual", False)
+    assert (max_step >= min_step), "Invalid range"
     assert (lamda > 0 and lamda < 2), "Relaxation parameter must be in (0,2)."
 
     if verbose:
@@ -55,18 +54,18 @@ def drot(init, proxf, proxg, b, max_iters=10, **kwargs):
     f = np.ones(m)
     if compute_r_primal:
         Az = np.zeros(b.shape)
-        
+
     start = time()
     while not done:
         x = proxg(y, step)
         z = 2 * x - y
         proxf(z, step)
-        x -= z # overide x by x - z 
+        x -= z # overide x by x - z
         y -= lamda * x
-        
-        assert x.flags['F_CONTIGUOUS']   
-        assert y.flags['F_CONTIGUOUS']   
-        assert z.flags['F_CONTIGUOUS']   
+
+        assert x.flags['F_CONTIGUOUS']
+        assert y.flags['F_CONTIGUOUS']
+        assert z.flags['F_CONTIGUOUS']
 
         if compute_r_primal:
             Az =np.hstack((z.dot(e), z.T.dot(f)))
@@ -75,13 +74,13 @@ def drot(init, proxf, proxg, b, max_iters=10, **kwargs):
             r_dual[k] = nla.norm(x, ord='fro')
         if compute_r_primal or compute_r_dual:
             r_full = np.sqrt((r_primal[k]**2 + r_dual[k]**2))
-            if k == 0: 
+            if k == 0:
                 r_full0 = r_full
-        
+
         if adapt_stepsize:
             if (r_primal[k] > mu * r_dual[k]) and (step * incr <= max_step):
-                step *= incr   
-                print("Stepsize increased, new value is ", step) 
+                step *= incr
+                print("Stepsize increased, new value is ", step)
             elif (r_dual[k] > mu * r_primal[k]) and (step / decr >= min_step):
                 step /= decr
                 print("Stepsize decreased, new value is ", step)
@@ -90,28 +89,27 @@ def drot(init, proxf, proxg, b, max_iters=10, **kwargs):
             restart = frestart(k, milestones)
         elif adapt_restart:
             restart = adaptive_restart(...)
-        
+
         if restart:
             ...
 
         if (k % print_every == 0 or k == max_iters-1) and verbose:
-            print("{}| {}  {}  {}  {}".format(str(k).rjust(6), 
+            print("{}| {}  {}  {}  {}".format(str(k).rjust(6),
                                         format(r_full, ".2e").ljust(10),
-                                        format(r_primal[k], ".2e").ljust(11), 
+                                        format(r_primal[k], ".2e").ljust(11),
                                         format(r_dual[k], ".2e").ljust(9),
                                         format(time() - start, ".2e").ljust(8)))
         k += 1
         done = (k >= max_iters) or (r_full <= eps_abs + eps_rel * r_full0)
-    
+
     end = time()
     print("Solve time: ", end - start)
-    
-    return {"sol":          z, 
-            "primal":       np.array(r_primal[:k]), 
-            "dual":         np.array(r_dual[:k]), 
-            "num_iters":    k, 
-            "solve_time":   (end - start)}
 
+    return {"sol":          z,
+            "primal":       np.array(r_primal[:k]),
+            "dual":         np.array(r_dual[:k]),
+            "num_iters":    k,
+            "solve_time":   (end - start)}
 
 def PDHG(init, proxg, proxh, max_iters=10, **kwargs):
     """
@@ -150,7 +148,7 @@ def PDHG(init, proxg, proxh, max_iters=10, **kwargs):
         print("----------------------------------------------------")
         print(" iter | total res | primal res | dual res | time (s)")
         print("----------------------------------------------------")
-    
+
     k = 0
     done = False
     x = np.array(init, order='F')
@@ -173,7 +171,6 @@ def PDHG(init, proxg, proxh, max_iters=10, **kwargs):
 
         x = x_new
 
-        # res = 0
         if k == 0:
             res0 = res
 
@@ -186,7 +183,7 @@ def PDHG(init, proxg, proxh, max_iters=10, **kwargs):
         k += 1
         # done = (k >= max_iters) or (res <= eps_abs + eps_rel * res0)
         done = k >= max_iters
-        
+
     end = time()
     print("Solve time: ", end - start)
 

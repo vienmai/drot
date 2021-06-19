@@ -20,12 +20,12 @@ def primal_dual_linear_prox(x, xnew, y, s, r, step=1.0):
     xe, xf = apply_operator(e, f, x)
     xnew_e, xnew_f = apply_operator(e, f, xnew)
     y1 = step * (2 * xnew_e - xe - s)
-    y2 = step * (2 * xnew_f - xf - r)  
+    y2 = step * (2 * xnew_f - xf - r)
     return y + np.hstack((y1, y2))
 
 def primal_dual_trace_nonnegative_prox(x, C, y, step=1):
-    assert x.flags['F_CONTIGUOUS'] 
-    assert C.flags['F_CONTIGUOUS']  
+    assert x.flags['F_CONTIGUOUS']
+    assert C.flags['F_CONTIGUOUS']
     m, n = x.shape
     T = x - step * C
     e = np.ones(n)
@@ -36,8 +36,8 @@ def primal_dual_trace_nonnegative_prox(x, C, y, step=1):
     return np.maximum(T, 0.0, order='F')
 
 def trace_nonnegative_prox(x, C, step=1.0):
-    """ 
-        x = argmin_y {trace(C^T x) + (0.5 /step) ||y - x||_{F}^2 | y > = 0} 
+    """
+        x = argmin_y {trace(C^T x) + (0.5 /step) ||y - x||_{F}^2 | y > = 0}
     """
     assert C.flags['F_CONTIGUOUS']
     assert x.flags['F_CONTIGUOUS']
@@ -47,7 +47,7 @@ def trace_nonnegative_prox(x, C, step=1.0):
 
 def generalized_doubly_stochastic_matrices_projection(A, s, r, step=None):
     assert A.flags['F_CONTIGUOUS']  # ensure we don't make an expensive copy
-    T = np.array(A, order='F') 
+    T = np.array(A, order='F')
     assert T.flags['F_CONTIGUOUS'] # ensure correctness of blas.dger
     m, n = T.shape
     assert (m > 0 and n > 0), "Invalid dimensions"
@@ -61,7 +61,7 @@ def generalized_doubly_stochastic_matrices_projection(A, s, r, step=None):
     v1 = Te_s - t1 * f
     v2 = Tf_r - t2 * e
     apply_adjoint_operator_and_override(e, f, v1, v2, T, -1.0/n, -1.0/m)
-    return T    
+    return T
 
 def generalized_doubly_stochastic_matrices_projection_(A, s, r):
     T = A.copy()
@@ -90,7 +90,7 @@ def apply_adjoint_operator_and_override(e, f, y, x, T, alpha=1.0, beta=None):
         T <- T + alpha * y e^T + beta* f x^T
     """
     assert T.flags['F_CONTIGUOUS']
-    assert e.size == x.size, "Dimension mismatch" 
+    assert e.size == x.size, "Dimension mismatch"
     assert f.size == y.size, "Dimension mismatch"
     if beta is None:
         beta = alpha
