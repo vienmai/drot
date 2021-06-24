@@ -1,6 +1,12 @@
 import numpy as np
 import scipy as sp
+import numba as nb
 
+@nb.jit(cache=True, nopython=True, fastmath=False, parallel=True)
+def trace_nonnegative_prox_nb(x, C, step=1.0):
+    for i in nb.prange(x.size):
+        x[i] = max(x[i] - step * C[i], 0.0)
+    return x
 
 def primal_dual_linear_prox(x, xnew, y, s, r, step=1.0):
     """
