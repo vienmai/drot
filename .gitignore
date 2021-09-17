@@ -1,7 +1,6 @@
 .ipynb_checkpoints/
 *.pdf
 *.jpg
-*.eps
 *.md
 .DS_Store
 .vscode/
