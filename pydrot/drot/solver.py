@@ -82,7 +82,7 @@ def drot(init, C, p, q, **kwargs):
             if k == 0:
                 r_full0 = r_full
 
-        if k%10==0 and adapt_stepsize:
+        if k>0 and k%10==0 and adapt_stepsize:
             if (r_primal[k] > mu * r_dual[k])  and (step / decr >= min_step):                
                 step /= decr
                 print("Iteration", k,": Stepsize decreased to ", step) 
@@ -97,7 +97,8 @@ def drot(init, C, p, q, **kwargs):
                                         format(r_dual[k], ".5e").ljust(9),
                                         format(time() - start, ".2e").ljust(8)))
         k += 1
-        done = (k >= max_iters) or (r_full <= eps_abs + eps_rel * r_full0)
+        # done = (k >= max_iters) or (r_full <= eps_abs + eps_rel * r_full0)
+        done = (k >= max_iters) or (r_primal[k-1] <= eps_abs)
 
     end = time()
     print("Drot terminated at iteration ", k-1)
