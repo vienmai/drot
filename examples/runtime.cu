@@ -7,7 +7,7 @@ int main(int argc, char *argv[]) {
     const std::vector<int> dims{100, 200, 500, 1000, 2000, 5000, 10000, 20000};
     const int maxiters = 100;
     const int ntests = 10;
-    const float eps = 1E-4;
+    const float eps = 1E-14;
     std::string filename, filename_;
 
     for (const auto &nrows: dims) {
