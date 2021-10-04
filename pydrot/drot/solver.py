@@ -12,7 +12,7 @@ def drot(init, C, p, q, **kwargs):
 
     # Stepsize parameters
     step = kwargs.pop("step", 1.0)
-    adapt_stepsize = kwargs.pop("adapt_stepsize", True)
+    adapt_stepsize = kwargs.pop("adapt_stepsize", False)
     incr = kwargs.pop("incr", 2.0)
     decr = kwargs.pop("decr", 2.0)
     mu = kwargs.pop("mu", 20)
@@ -70,7 +70,8 @@ def drot(init, C, p, q, **kwargs):
         a1 = a2 - yy - c2
         b1 = b2 - xx - c1
         if compute_r_dual:
-            r_dual[k] = abs(np.sum(x * C) - (-yy.dot(p)/n - xx.dot(q)/m) / step)
+            # r_dual[k] = abs(np.sum(x * C) - (-yy.dot(p)/n - xx.dot(q)/m) / step)
+            r_dual[k] = abs(np.sum(x * C))
         
         apply_adjoint_operator_and_override(e, f, yy, xx, x, -1.0/n, -1.0/m)
 
@@ -180,3 +181,72 @@ def PDHG(init, proxg, proxh, max_iters=10, **kwargs):
             "dual":         np.array(r_dual[:k]),
             "num_iters":    k,
             "solve_time":   (end - start)}
+
+def sinkhorn(a, b, M, reg, numItermax=1000, stopThr=1e-9, verbose=False, log=True, **kwargs):
+    """
+    This function is a minor modification of POT's implementation 
+    for plotting and comparing purposes.
+    """
+    if len(a) == 0:
+        a = np.full((M.shape[0],), 1.0 / M.shape[0], type_as=M)
+    if len(b) == 0:
+        b = np.full((M.shape[1],), 1.0 / M.shape[1], type_as=M)
+
+    # init data
+    dim_a = len(a)
+    dim_b = len(b)
+
+    if log:
+        log = {'iter': [], 'res': [], 'fval': []}
+
+    u = np.ones(dim_a).astype(M.dtype) / dim_a
+    v = np.ones(dim_b).astype(M.dtype) / dim_b
+
+    K = np.exp(M / (-reg))
+
+    Kp = (1 / a).reshape(-1, 1) * K
+    cpt = 0
+    err = 1
+    while (err > stopThr and cpt < numItermax):
+        uprev = u
+        vprev = v
+
+        KtransposeU = np.dot(K.T, u)
+        v = b / KtransposeU
+        u = 1. / np.dot(Kp, v)
+
+        if (np.any(KtransposeU == 0)
+                or np.any(np.isnan(u)) or np.any(np.isnan(v))
+                or np.any(np.isinf(u)) or np.any(np.isinf(v))):
+            # we have reached the machine precision
+            # come back to previous solution and quit loop
+            print('Warning: numerical errors at iteration', cpt)
+            u = uprev
+            v = vprev
+            break
+        if cpt % 1 == 0:
+            # we can speed up the process by checking for the error only all
+            # the 10th iterations
+            tmp1 = np.einsum('i,ij,j->i', u, K, v)
+            tmp2 = np.einsum('i,ij,j->j', u, K, v)
+            err = np.sqrt(np.linalg.norm(tmp1 - a) + np.linalg.norm(tmp2 - b)**2)  # violation of marginal
+            if log:
+                log['iter'].append(cpt)
+                log['res'].append(err)
+                log['fval'].append(np.sum(u[:, None] * (K * M) * v[None, :]))
+
+            if verbose:
+                if cpt % 2 == 0:
+                    print(
+                        '{:5s}|{:12s}'.format('It.', 'Err') + '\n' + '-' * 19)
+                print('{:5d}|{:8e}|'.format(cpt, err))
+        cpt = cpt + 1
+    if log:
+        log['u'] = u
+        log['v'] = v
+
+    if log:
+        return u.reshape((-1, 1)) * K * v.reshape((1, -1)), log
+    else:
+        return u.reshape((-1, 1)) * K * v.reshape((1, -1))
+
